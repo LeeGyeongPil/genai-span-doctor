@@ -105,3 +105,42 @@ test('an empty directory exits 2', () => {
   assert.equal(r.code, 2);
   assert.ok(r.stderr.includes(dir));
 });
+
+test('directory mode skips non-OTLP JSON and lists it (en and ko)', () => {
+  const dir = join(import.meta.dirname, '..', '..', 'examples');
+  const r = cli([dir, '--fail-on', 'none']);
+  assert.equal(r.code, 0);
+  assert.match(r.stdout, /Skipped: .*prices\.example\.json/);
+  const ko = cli([dir, '--fail-on', 'none'], { LANG: 'ko_KR.UTF-8' });
+  assert.match(ko.stdout, /건너뜀: .*prices\.example\.json/);
+  const j = JSON.parse(cli([dir, '--format', 'json', '--fail-on', 'none']).stdout) as { skipped: string[]; inputs: string[] };
+  assert.ok(j.skipped.some((f) => f.endsWith('prices.example.json')));
+  assert.ok(j.inputs.every((f) => !f.endsWith('prices.example.json')));
+  const s = JSON.parse(cli([dir, '--format', 'sarif', '--fail-on', 'none']).stdout) as { runs: Array<{ properties: { skipped: string[] } }> };
+  assert.ok(s.runs[0]?.properties.skipped.some((f) => f.endsWith('prices.example.json')));
+  const e = cli([dir]); // default --fail-on error: exit comes from findings only
+  assert.ok(e.code === 0 || e.code === 1);
+});
+
+test('directory with only non-OTLP JSON exits 2; mid-file JSONL failure drops its spans', () => {
+  const dir = tmpDir('gsd-');
+  writeFileSync(join(dir, 'a.json'), '{"x": 1}');
+  const r = cli([dir]);
+  assert.equal(r.code, 2);
+  assert.ok(r.stderr.includes(dir));
+  writeFileSync(join(dir, 'b.jsonl'), '{"resourceSpans": [{"scopeSpans": [{"spans": [{"name": "s"}]}]}]}\n{"x": 1}\n');
+  assert.throws(() => readSpans(dir, wanted), /skipped 2/); // b.jsonl's first-line span was rolled back
+  writeFileSync(join(dir, 'c.json'), '{"resourceSpans": []}');
+  const res = readSpans(dir, wanted);
+  assert.equal(res.spans.length, 0);
+  assert.equal(res.skipped.length, 2);
+  assert.equal(res.files.length, 1);
+});
+
+test('single non-OTLP file and stdin still exit 2', () => {
+  const dir = tmpDir('gsd-');
+  const f = join(dir, 'a.json');
+  writeFileSync(f, '{"x": 1}');
+  assert.equal(cli([f]).code, 2);
+  assert.equal(cli(['-'], { LANG: 'en_US.UTF-8' }, '{"x": 1}').code, 2);
+});

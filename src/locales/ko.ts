@@ -91,6 +91,7 @@ export const ko: Record<MessageKey, string> = {
   'err.writeFile': '{path} 에 쓸 수 없습니다: {detail}.',
 
   'note.ottlWritten': 'Collector transform 조각을 {path} 에 썼습니다',
+  'note.skipped': '건너뜀: {path} (OTLP 추적 파일이 아님)',
   'note.ottlNothing': '필요한 문이 없습니다. 관측된 스팬이 모두 이미 표준 속성 이름을 씁니다.',
 
   'ottl.header': 'genai-span-doctor {version} 이(가) 생성했습니다. 배포 전에 검토하고, traces 파이프라인의 processors 에 transform/genai 를 추가하세요.',

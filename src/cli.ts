@@ -164,9 +164,9 @@ export function run(rawArgv: string[], io: Io): number {
   });
 
   let report: string;
-  if (format === 'json') report = JSON.stringify(buildJson(result, { version, lang, inputs: read.files }), null, 2) + '\n';
-  else if (format === 'sarif') report = JSON.stringify(buildSarif(result, version, t), null, 2) + '\n';
-  else report = renderTable(result, t);
+  if (format === 'json') report = JSON.stringify(buildJson(result, { version, lang, inputs: read.files, skipped: read.skipped }), null, 2) + '\n';
+  else if (format === 'sarif') report = JSON.stringify(buildSarif(result, version, t, read.skipped), null, 2) + '\n';
+  else report = renderTable(result, t, read.skipped);
 
   // With --emit-ottl and no file, stdout is reserved for the YAML so it can be piped into a file.
   const ottlToStdout = v['emit-ottl'] === true && ottlFile === undefined;

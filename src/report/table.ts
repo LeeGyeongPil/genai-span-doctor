@@ -38,7 +38,7 @@ function renderGrid(headers: string[], rows: string[][], numeric: boolean[]): st
   return [line(headers), widths.map((w) => '-'.repeat(w)).join('  '), ...rows.map(line)];
 }
 
-export function renderTable(r: AuditResult, t: Translator): string {
+export function renderTable(r: AuditResult, t: Translator, skipped: string[] = []): string {
   const out: string[] = [];
   const s = r.summary;
   if (r.analyses.length > 0) {
@@ -84,6 +84,9 @@ export function renderTable(r: AuditResult, t: Translator): string {
     }
     out.push('');
   }
+
+  for (const f of skipped) out.push(t('note.skipped', { path: f }));
+  if (skipped.length > 0) out.push('');
 
   out.push(t('summary.title'));
   out.push(`  ${t('summary.spans', { llm: s.llmSpans, total: s.spans, files: s.files, backend: r.backendName })}`);

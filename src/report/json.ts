@@ -7,6 +7,7 @@ export interface ReportMeta {
   version: string;
   lang: string;
   inputs: string[];
+  skipped?: string[];
 }
 
 export function buildJson(r: AuditResult, meta: ReportMeta): Record<string, unknown> {
@@ -16,6 +17,7 @@ export function buildJson(r: AuditResult, meta: ReportMeta): Record<string, unkn
     backend: r.backendName,
     lang: meta.lang,
     inputs: meta.inputs,
+    skipped: meta.skipped ?? [],
     summary: r.summary,
     spans: r.analyses.map((a) => ({
       file: a.span.file,

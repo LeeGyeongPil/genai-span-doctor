@@ -130,11 +130,15 @@ function collectFiles(dir: string, acc: string[]): void {
 }
 
 /** Reads spans from a file, a directory (recursive *.json / *.jsonl) or "-" (stdin). */
-export function readSpans(input: string, wanted: Set<string>, stdin: () => string = () => readFileSync(0, 'utf8')): { spans: SpanRecord[]; files: string[] } {
+export function readSpans(
+  input: string,
+  wanted: Set<string>,
+  stdin: () => string = () => readFileSync(0, 'utf8'),
+): { spans: SpanRecord[]; files: string[]; skipped: string[] } {
   const spans: SpanRecord[] = [];
   if (input === '-') {
     parseText(stdin(), '<stdin>', wanted, spans);
-    return { spans, files: ['<stdin>'] };
+    return { spans, files: ['<stdin>'], skipped: [] };
   }
   let st;
   try {
@@ -143,12 +147,15 @@ export function readSpans(input: string, wanted: Set<string>, stdin: () => strin
     throw new InputError('readFile', input, (e as NodeJS.ErrnoException).code === 'ENOENT' ? 'no such file or directory' : (e as Error).message);
   }
   const files: string[] = [];
-  if (st.isDirectory()) {
+  const isDir = st.isDirectory();
+  if (isDir) {
     collectFiles(input, files);
     if (files.length === 0) throw new InputError('emptyDir', input, 'no *.json or *.jsonl files found');
   } else {
     files.push(input);
   }
+  const audited: string[] = [];
+  const skipped: string[] = [];
   for (const f of files) {
     let text: string;
     try {
@@ -156,7 +163,22 @@ export function readSpans(input: string, wanted: Set<string>, stdin: () => strin
     } catch (e) {
       throw new InputError('readFile', f, (e as Error).message);
     }
-    parseText(text, f, wanted, spans);
+    const before = spans.length;
+    try {
+      parseText(text, f, wanted, spans);
+    } catch (e) {
+      // Directory mode only: a JSON file that is not an OTLP export (prices, config) is skipped, not fatal.
+      if (isDir && e instanceof InputError && e.code === 'notOtlp') {
+        spans.length = before; // drop spans already read from this file (JSON Lines failing mid-file)
+        skipped.push(f);
+        continue;
+      }
+      throw e;
+    }
+    audited.push(f);
   }
-  return { spans, files };
+  if (isDir && audited.length === 0) {
+    throw new InputError('emptyDir', input, `no OTLP trace files (skipped ${skipped.length} JSON file(s) without "resourceSpans")`);
+  }
+  return { spans, files: audited, skipped };
 }

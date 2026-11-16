@@ -5,7 +5,7 @@ import type { Translator } from '../i18n.js';
 
 const SARIF_SCHEMA = 'https://json.schemastore.org/sarif-2.1.0.json';
 
-export function buildSarif(r: AuditResult, version: string, t: Translator): Record<string, unknown> {
+export function buildSarif(r: AuditResult, version: string, t: Translator, skipped: string[] = []): Record<string, unknown> {
   const rules = RULE_IDS.map((id) => ({
     id,
     name: id,
@@ -45,6 +45,7 @@ export function buildSarif(r: AuditResult, version: string, t: Translator): Reco
           },
         },
         results,
+        properties: { skipped },
       },
     ],
   };
