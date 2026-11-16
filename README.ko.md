@@ -32,7 +32,7 @@ node dist/src/cli.js --version
 소스 체크아웃에서 버전 명령의 실제 출력(2026-11-16):
 
 ```text
-0.1.0
+0.2.0
 ```
 
 아래 명령은 `npx genai-span-doctor` 형태로 적었습니다. 소스 체크아웃에서는 `node dist/src/cli.js` 로 바꿔 쓰세요.
@@ -77,7 +77,7 @@ openllmetry chat            otel-genai+openllmetry           12        9,012    
 | 명령·옵션 | 하는 일 | 예 |
 |---|---|---|
 | `<파일>` | OTLP JSON(`ExportTraceServiceRequest`) 또는 Collector file 익스포터의 JSON Lines 점검 | `genai-span-doctor traces.json` |
-| `<디렉터리>` | 아래의 모든 `*.json`, `*.jsonl` 점검(모두 OTLP 내보내기여야 함) | `genai-span-doctor ./traces` |
+| `<디렉터리>` | 아래의 모든 `*.json`, `*.jsonl` 점검(OTLP 내보내기가 아닌 JSON 은 건너뛰고 목록으로 표시) | `genai-span-doctor ./traces` |
 | `-` | 표준 입력에서 읽기 | `cat traces.jsonl \| genai-span-doctor -` |
 | `--format table\|json\|sarif` | 보고서 형식(기본 `table`), `json` 은 `schemaVersion: 1` | `--format json` |
 | `--backend otel\|langfuse\|phoenix` | "토큰 0" 판정에서 어떤 속성 이름을 읽을 수 있다고 볼지 | `--backend phoenix` |
@@ -175,7 +175,7 @@ flowchart LR
 | CI 에서 종료 코드 1 | `error` 판정이 있음 | 추적을 고치거나 `--fail-on none` 으로 보고만 받기 |
 | `--emit-ottl` 이 알림만 내고 YAML 이 없음 | 이미 표준 이름을 씀 | 변환할 것이 없음 |
 
-알려진 한계: 파일을 통째로 읽습니다(큰 JSONL 은 메모리를 씁니다). GSD006 은 파일 단위이고, `openllmetry` 처럼 다른 방언 위에 덧붙는 방언은 GSD006 의 개수에 세지 않습니다(그래서 요약의 방언 목록보다 하나 적을 수 있습니다). 디렉터리 모드는 OTLP 가 아닌 JSON 파일을 만나면 종료 코드 2 로 멈춥니다. 같은 ID 의 스팬이 아주 많이 반복되면 표 출력이 느려질 수 있습니다(`--format json` 은 빠릅니다). protobuf 입력과 실시간 수신은 지원하지 않습니다.
+알려진 한계: 파일을 통째로 읽습니다(큰 JSONL 은 메모리를 씁니다). GSD006 은 파일 단위이고, `openllmetry` 처럼 다른 방언 위에 덧붙는 방언은 GSD006 의 개수에 세지 않습니다(그래서 요약의 방언 목록보다 하나 적을 수 있습니다). 디렉터리 모드에서는 `resourceSpans` 배열이 없는 JSON 파일을 건너뛰고 `건너뜀: <파일>` 로 알립니다(JSON 은 `skipped`, SARIF 는 `properties.skipped`). 남은 OTLP 파일이 하나도 없을 때만 종료 코드 2 입니다. 단일 비 OTLP 파일과 stdin 은 그대로 종료 코드 2 입니다. 같은 ID 의 스팬이 아주 많이 반복되면 표 출력이 느려질 수 있습니다(`--format json` 은 빠릅니다). protobuf 입력과 실시간 수신은 지원하지 않습니다.
 
 ## 개발·기여
 ```bash

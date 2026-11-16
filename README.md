@@ -32,7 +32,7 @@ node dist/src/cli.js --version
 Output of the version command in a source checkout, 2026-11-16:
 
 ```text
-0.1.0
+0.2.0
 ```
 
 The commands below use the `npx genai-span-doctor` form. In a source checkout, write `node dist/src/cli.js` instead.
@@ -77,7 +77,7 @@ How to read it:
 | Command / option | What it does | Example |
 |---|---|---|
 | `<file>` | Audit an OTLP JSON file (`ExportTraceServiceRequest`) or JSON Lines from the Collector file exporter | `genai-span-doctor traces.json` |
-| `<directory>` | Audit every `*.json` and `*.jsonl` file below it (all must be OTLP exports) | `genai-span-doctor ./traces` |
+| `<directory>` | Audit every `*.json` and `*.jsonl` file below it (JSON files that are not OTLP exports are skipped and listed) | `genai-span-doctor ./traces` |
 | `-` | Read from standard input | `cat traces.jsonl \| genai-span-doctor -` |
 | `--format table\|json\|sarif` | Report format (default `table`); `json` carries `schemaVersion: 1` | `--format json` |
 | `--backend otel\|langfuse\|phoenix` | Which attribute names count as "readable" when deciding what shows 0 | `--backend phoenix` |
@@ -175,7 +175,7 @@ flowchart LR
 | Exit code 1 in CI | An `error` finding exists | Fix the traces, or use `--fail-on none` to only report |
 | `--emit-ottl` prints a note and no YAML | The traces already use the standard names | Nothing to transform |
 
-Known limits: files are read whole (large JSONL files use memory). GSD006 is per file and does not count overlay dialects such as `openllmetry`, so its count can be one lower than the Summary dialect list. Directory mode stops with exit 2 at the first JSON file that is not an OTLP export. Table output can slow down when very many spans repeat the same ids (`--format json` stays fast). Protobuf input and live receiving are not supported.
+Known limits: files are read whole (large JSONL files use memory). GSD006 is per file and does not count overlay dialects such as `openllmetry`, so its count can be one lower than the Summary dialect list. In directory mode, JSON files without a `resourceSpans` array are skipped and reported as `Skipped: <file>` (`skipped` in JSON, `properties.skipped` in SARIF); exit 2 only when no OTLP file is left. A single non-OTLP file or stdin still exits 2. Table output can slow down when very many spans repeat the same ids (`--format json` stays fast). Protobuf input and live receiving are not supported.
 
 ## Development
 ```bash
