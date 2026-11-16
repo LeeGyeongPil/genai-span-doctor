@@ -1,6 +1,6 @@
 {
   "name": "genai-span-doctor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Audit exported OTLP traces for LLM token-attribute dialects, cache-inclusive token semantics and backend visibility, and emit a Collector transform (OTTL) fix.",
   "license": "MIT",
   "type": "module",
