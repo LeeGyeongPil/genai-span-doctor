@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "description": "Token-attribute dialects. Each field lists candidate attribute keys in priority order. Update this file (and its checked dates) when a convention changes.",
+  "standard": {
+    "input": "gen_ai.usage.input_tokens",
+    "output": "gen_ai.usage.output_tokens",
+    "cacheRead": "gen_ai.usage.cache_read.input_tokens",
+    "cacheWrite": "gen_ai.usage.cache_creation.input_tokens"
+  },
+  "priority": ["otel-genai", "openllmetry", "otel-genai-deprecated", "openinference", "vercel-ai", "flat"],
+  "deprecatedAttributes": [
+    {
+      "key": "gen_ai.usage.prompt_tokens",
+      "replacement": "gen_ai.usage.input_tokens",
+      "source": "https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/",
+      "checked": "2026-11-16"
+    },
+    {
+      "key": "gen_ai.usage.completion_tokens",
+      "replacement": "gen_ai.usage.output_tokens",
+      "source": "https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/",
+      "checked": "2026-11-16"
+    },
+    {
+      "key": "gen_ai.system",
+      "replacement": "gen_ai.provider.name",
+      "source": "https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/",
+      "checked": "2026-11-16"
+    }
+  ],
+  "dialects": [
+    {
+      "id": "otel-genai",
+      "label": "OpenTelemetry GenAI (current)",
+      "keys": {
+        "input": ["gen_ai.usage.input_tokens"],
+        "output": ["gen_ai.usage.output_tokens"],
+        "cacheRead": ["gen_ai.usage.cache_read.input_tokens"],
+        "cacheWrite": ["gen_ai.usage.cache_creation.input_tokens"],
+        "reasoning": ["gen_ai.usage.reasoning.output_tokens"],
+        "total": [],
+        "model": ["gen_ai.request.model", "gen_ai.response.model"],
+        "provider": ["gen_ai.provider.name"]
+      },
+      "detect": [
+        "gen_ai.usage.input_tokens",
+        "gen_ai.usage.output_tokens",
+        "gen_ai.usage.cache_read.input_tokens",
+        "gen_ai.usage.cache_creation.input_tokens",
+        "gen_ai.usage.reasoning.output_tokens"
+      ],
+      "inputIncludesCache": true,
+      "notes": "input_tokens is the total input including cached tokens; cache attributes are a subset.",
+      "sources": [
+        { "url": "https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/", "checked": "2026-11-16" },
+        { "url": "https://github.com/open-telemetry/semantic-conventions-genai", "checked": "2026-11-16" }
+      ]
+    },
+    {
+      "id": "openllmetry",
+      "label": "OpenLLMetry (Traceloop)",
+      "keys": {
+        "input": [],
+        "output": [],
+        "cacheRead": ["gen_ai.usage.cache_read_input_tokens"],
+        "cacheWrite": ["gen_ai.usage.cache_creation_input_tokens"],
+        "reasoning": ["gen_ai.usage.reasoning_tokens"],
+        "total": ["gen_ai.usage.total_tokens", "llm.usage.total_tokens"],
+        "model": [],
+        "provider": []
+      },
+      "detect": [
+        "gen_ai.usage.cache_read_input_tokens",
+        "gen_ai.usage.cache_creation_input_tokens",
+        "gen_ai.usage.reasoning_tokens",
+        "gen_ai.usage.total_tokens",
+        "llm.usage.total_tokens"
+      ],
+      "inputIncludesCache": "unknown",
+      "notes": "Uses the current input/output names but underscore-style cache names and extra totals. Whether input includes cache depends on the instrumented provider, so the tool falls back to the cache > input heuristic.",
+      "sources": [
+        { "url": "https://www.npmjs.com/package/@traceloop/ai-semantic-conventions", "checked": "2026-11-16" }
+      ]
+    },
+    {
+      "id": "otel-genai-deprecated",
+      "label": "OpenTelemetry GenAI (deprecated names)",
+      "keys": {
+        "input": ["gen_ai.usage.prompt_tokens"],
+        "output": ["gen_ai.usage.completion_tokens"],
+        "cacheRead": [],
+        "cacheWrite": [],
+        "reasoning": [],
+        "total": [],
+        "model": [],
+        "provider": ["gen_ai.system"]
+      },
+      "detect": ["gen_ai.usage.prompt_tokens", "gen_ai.usage.completion_tokens"],
+      "inputIncludesCache": true,
+      "notes": "prompt_tokens and completion_tokens were renamed to input_tokens and output_tokens.",
+      "sources": [
+        { "url": "https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/", "checked": "2026-11-16" }
+      ]
+    },
+    {
+      "id": "openinference",
+      "label": "OpenInference (Arize)",
+      "keys": {
+        "input": ["llm.token_count.prompt"],
+        "output": ["llm.token_count.completion"],
+        "cacheRead": ["llm.token_count.prompt_details.cache_read"],
+        "cacheWrite": ["llm.token_count.prompt_details.cache_write"],
+        "reasoning": ["llm.token_count.completion_details.reasoning"],
+        "total": ["llm.token_count.total"],
+        "model": ["llm.model_name"],
+        "provider": ["llm.provider", "llm.system"]
+      },
+      "detect": [
+        "llm.token_count.prompt",
+        "llm.token_count.completion",
+        "llm.token_count.prompt_details.cache_read",
+        "llm.token_count.prompt_details.cache_write",
+        "llm.token_count.completion_details.reasoning",
+        "llm.token_count.total"
+      ],
+      "inputIncludesCache": true,
+      "notes": "The specification defines the prompt count as including cached tokens; some instrumentors still put the cache-excluded value there.",
+      "sources": [
+        { "url": "https://github.com/Arize-ai/openinference/blob/main/spec/semantic_conventions.md", "checked": "2026-11-16" },
+        { "url": "https://github.com/langfuse/langfuse/issues/13571", "checked": "2026-11-16" }
+      ]
+    },
+    {
+      "id": "vercel-ai",
+      "label": "Vercel AI SDK (ai.* attributes)",
+      "keys": {
+        "input": ["ai.usage.inputTokens", "ai.usage.promptTokens"],
+        "output": ["ai.usage.outputTokens", "ai.usage.completionTokens"],
+        "cacheRead": ["ai.usage.inputTokenDetails.cacheReadTokens", "ai.usage.cachedInputTokens"],
+        "cacheWrite": ["ai.usage.inputTokenDetails.cacheWriteTokens"],
+        "reasoning": ["ai.usage.outputTokenDetails.reasoningTokens", "ai.usage.reasoningTokens"],
+        "total": ["ai.usage.totalTokens"],
+        "model": ["ai.model.id"],
+        "provider": ["ai.model.provider"]
+      },
+      "detect": [
+        "ai.usage.inputTokens",
+        "ai.usage.promptTokens",
+        "ai.usage.outputTokens",
+        "ai.usage.completionTokens",
+        "ai.usage.inputTokenDetails.cacheReadTokens",
+        "ai.usage.cachedInputTokens",
+        "ai.usage.inputTokenDetails.cacheWriteTokens",
+        "ai.usage.totalTokens"
+      ],
+      "inputIncludesCache": true,
+      "notes": "Legacy telemetry classes of the AI SDK emit ai.* names. The default OpenTelemetry class in @ai-sdk/otel emits gen_ai.* names instead.",
+      "sources": [
+        { "url": "https://ai-sdk.dev/docs/ai-sdk-core/telemetry", "checked": "2026-11-16" },
+        { "url": "https://www.npmjs.com/package/@ai-sdk/otel", "checked": "2026-11-16" }
+      ]
+    },
+    {
+      "id": "flat",
+      "label": "Flat non-standard keys (un-namespaced)",
+      "keys": {
+        "input": ["input_tokens"],
+        "output": ["output_tokens"],
+        "cacheRead": ["cache_read_tokens"],
+        "cacheWrite": ["cache_creation_tokens"],
+        "reasoning": [],
+        "total": [],
+        "model": ["model"],
+        "provider": []
+      },
+      "detect": ["input_tokens", "output_tokens", "cache_read_tokens", "cache_creation_tokens"],
+      "inputIncludesCache": false,
+      "notes": "Un-namespaced keys seen in real exports (observed telemetry, 2026-11-16); there is no standard for these names. The cache-excluded meaning follows the provider usage fields these keys mirror: input_tokens excludes cache read and cache creation tokens.",
+      "sources": [
+        { "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching", "checked": "2026-11-16" }
+      ]
+    }
+  ]
+}
